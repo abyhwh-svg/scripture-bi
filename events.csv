@@ -1,0 +1,10 @@
+event_id,event_name,book,reference,writer,place_id,period_label,year_sort,summary,video_url,location_confidence
+e1,Birth of Jesus,Matthew,Matthew 2:1,Matthew,bethlehem,c. 2 BCE,-2,Jesus was born in Bethlehem.,videos/e1.mp4,Approximate city
+e2,Jesus' death,John,John 19:16-30,Apostle John,jerusalem,33 CE,33,Jesus was executed near Jerusalem.,videos/e2.mp4,Approximate city
+e3,Pentecost,Acts,Acts 2:1-4,Luke,jerusalem,33 CE,33,The disciples received holy spirit at Pentecost.,videos/e3.mp4,Approximate city
+e4,Paul in Corinth,Acts,Acts 18:1-11,Luke,corinth,c. 50-52 CE,51,Paul stayed and taught in Corinth.,videos/e4.mp4,Approximate city
+e5,Paul in Ephesus,Acts,Acts 19:1-20,Luke,ephesus,c. 52-55 CE,54,Paul taught in Ephesus.,videos/e5.mp4,Approximate city
+e6,Daniel in Babylon,Daniel,Daniel 1:1-6,Daniel,babylon,6th century BCE,-600,Daniel was taken to Babylon; the year is only a broad sorting placeholder.,videos/e6.mp4,Approximate site
+e7,Jonah sent to Nineveh,Jonah,Jonah 3:1-5,Jonah,nineveh,9th century BCE,-850,Jonah preached to the people of Nineveh.,videos/e7.mp4,Approximate site
+e8,Esther in Shushan,Esther,Esther 2:5-18,Mordecai,shushan,5th century BCE,-475,Esther became queen in the Persian royal court.,videos/e8.mp4,Approximate site
+e9,Writing on the wall,Daniel,Daniel 5,Daniel,babylon,539 BCE (source chronology),-539,"During Belshazzar’s feast, writing appeared on the wall. Daniel interpreted the message. Babylon fell that night.",videos/e9.mp4,Approximate city

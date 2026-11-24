@@ -1,0 +1,20 @@
+place_id,name,latitude,longitude,precision,note
+jerusalem,Jerusalem,31.778,35.235,city,Approximate historical city center
+rome,Rome,41.903,12.496,city,Approximate historical city center
+babylon,Babylon (Mesopotamia),32.542,44.421,archaeological site,Ancient Babylon in present-day Iraq; 1 Peter's Babylon identification debated
+corinth,Corinth,37.906,22.879,city,Ancient Corinth
+caesarea,Caesarea Maritima,32.500,34.891,site,Roman-era Caesarea
+patmos,Patmos,37.313,26.548,island,Approximate island center
+ephesus,Ephesus,37.940,27.342,site,Ancient Ephesus
+antioch,Syrian Antioch,36.202,36.160,city,Modern Antakya vicinity
+shushan,Susa (Shushan),32.190,48.257,site,Ancient Susa in present-day Iran
+moab,Plains of Moab,31.800,35.750,region,Illustrative regional point not an exact writing location
+judah,Judah,31.650,35.100,region,Illustrative regional point
+israel,Ancient Israel,32.100,35.000,region,Illustrative regional point
+samaria,Samaria region,32.280,35.190,region,Illustrative regional point
+macedonia,Macedonia,40.650,22.900,region,Illustrative regional point
+canaan,Canaan,31.950,35.100,region,Illustrative regional point
+egypt,Egypt,30.044,31.236,region,Illustrative regional point near Cairo
+nineveh,Nineveh,36.359,43.152,site,Near modern Mosul Iraq
+bethlehem,Bethlehem,31.705,35.202,city,Approximate historical town center
+red_sea,Red Sea (illustrative),28.600,33.300,uncertain,Exact Exodus crossing location disputed
