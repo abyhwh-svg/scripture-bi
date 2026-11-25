@@ -5,7 +5,45 @@ import plotly.graph_objects as go
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parent
-st.set_page_config(page_title="Scripture Globe", page_icon="🌍", layout="wide")
+st.set_page_config(page_title="Scripture", page_icon="🌍", layout="wide")
+st.markdown("""<style>
+.stApp {background: radial-gradient(ellipse at top, #203c50, #0a1725 75%); color: #eef2f5;}
+[data-testid="stHeader"] {background: #0a1725;}
+h1,h2,h3 {color: #e8c98d !important;}
+[data-testid="stMetric"] {background: #172e40; border: 1px solid #385062; border-radius: 10px; padding: 12px;}
+[data-testid="stCaptionContainer"] {color: #bacbd8;}
+a {color: #91d5ef !important;}
+</style>""", unsafe_allow_html=True)
+
+
+from globe import globe
+if "atlas_open" not in st.session_state:
+    st.session_state.atlas_open = False
+if not st.session_state.atlas_open:
+    import base64
+    cave = base64.b64encode((ROOT / "welcome_cavern.jpg").read_bytes()).decode()
+    st.markdown(f"""<style>
+    .stApp {{background: #090807 url('data:image/jpeg;base64,{cave}') center center / cover fixed no-repeat;}}
+    [data-testid="stHeader"] {{background:transparent;}}
+    [data-testid="stMainBlockContainer"] {{padding-top:1.2rem;padding-bottom:1rem;}}
+    [data-testid="stBaseButton-primary"] {{background:linear-gradient(110deg,#b29259,#e1c58c,#b29259);color:#211a10;border:1px solid #dfc48e;box-shadow:0 0 20px #b2925930;}}
+    .welcome-topics {{display:flex;justify-content:center;gap:clamp(12px,5vw,70px);color:#e8c98d;flex-wrap:wrap;text-align:center;font-size:clamp(1rem,2vw,1.35rem);}}
+    .welcome-topics svg {{display:block;margin:0 auto 5px;width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:1.5;}}
+    </style>""", unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;letter-spacing:.2em;color:#c8b58e">AN INTERACTIVE HISTORICAL ATLAS</div><h1 style="text-align:center;letter-spacing:.28em;font-size:clamp(2rem,6vw,4rem)">SCRIPTURE</h1>', unsafe_allow_html=True)
+    globe(welcome=True)
+    st.markdown('<p style="text-align:center;color:#e4cca0">Discover the geographical and historical world of the Bible.</p>', unsafe_allow_html=True)
+    st.markdown('''<div class="welcome-topics"><span><svg viewBox="0 0 24 24"><path d="M12 5Q6 2 2 5v15q5-3 10 0 5-3 10 0V5q-5-3-10 0v15"/></svg>Scripture</span><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="5" ry="10"/><path d="M2 12h20M5 6h14M5 18h14"/></svg>Geography</span><span><svg viewBox="0 0 24 24"><path d="M2 8l10-6 10 6H2zm2 12h16M2 22h20M6 9v10m6-10v10m6-10v10"/></svg>Archaeology</span></div>''', unsafe_allow_html=True)
+    _, center, _ = st.columns([1,2,1])
+    with center:
+        if st.button("Explore the living atlas →", type="primary", use_container_width=True):
+            st.session_state.atlas_open=True
+            st.rerun()
+    st.stop()
+
+if st.button("← Home", key="atlas_home"):
+    st.session_state.atlas_open = False
+    st.rerun()
 
 @st.cache_data
 def load():
@@ -39,10 +77,16 @@ def find_writing_place(raw):
 books["writer_place_id"] = books["Place Written"].map(find_writing_place)
 books["testament"] = books["Scripture Division"].map({"Hebrew Scriptures":"Old Testament / Hebrew Scriptures", "Greek Scriptures":"New Testament / Greek Scriptures"})
 
-st.title("Scripture BI | The living atlas")
-st.caption("Interactive orthographic globe • orange = writing locations • blue = event locations • illustrative historical coordinates")
+st.title("Scripture")
+st.caption("Explore scripture, geography and physical evidence • approximate historical coordinates")
+a,b,c,d = st.columns(4)
+a.metric("Bible books", len(books))
+b.metric("Mapped places", len(places))
+c.metric("Event records", len(events))
+d.metric("Research mode", "Atlas")
+filters, map_panel, insights = st.columns([1.05, 2.8, 1.55], gap="medium")
 
-with st.sidebar:
+with filters:
     st.header("Research filters")
     divisions = st.multiselect("Scripture division", books["testament"].dropna().unique().tolist(), default=books["testament"].dropna().unique().tolist())
     selected_books = books.loc[books["testament"].isin(divisions), "Book Name"].tolist()
@@ -52,7 +96,10 @@ with st.sidebar:
     show_writing = st.checkbox("Where books were written", value=True)
     show_events = st.checkbox("Where events occurred", value=True)
     focus = st.selectbox("Focus location", ["Eastern Mediterranean (overview)"] + places["name"].tolist())
-    zoom = st.slider("Globe zoom", 0.7, 5.0, 2.2, 0.1)
+    view = "Globe"
+    zoom = st.slider("Map zoom", 0.7, 12.0, 1.0, 0.1)
+    if st.button("Reset map view"):
+        st.session_state["map_reset"] = st.session_state.get("map_reset", 0) + 1
 
 selected = books[books["Book Name"].isin(book_choices or selected_books)].copy()
 selected = selected[selected["Writer(s)"].apply(lambda x: not chosen_writers or any(w in str(x) for w in chosen_writers))]
@@ -64,6 +111,19 @@ else:
     row = places[places["name"] == focus].iloc[0]
     center_lat, center_lon = float(row["latitude"]), float(row["longitude"])
 
+from archaeology import load_evidence, filter_evidence, add_evidence_layer, research_panel
+arch = load_evidence(ROOT)
+with filters:
+    show_arch = st.checkbox("Archaeological evidence", value=True)
+    year_min, year_max = int(events.year_sort.min()), int(events.year_sort.max())
+    years = st.slider("Event years (negative = BCE)", year_min, year_max, (year_min, year_max))
+    selected_events = selected_events[selected_events.year_sort.between(*years)]
+    arch_place = st.selectbox("Archaeology region", ["Follow globe focus", "All regions"] + sorted({x for raw in arch.related_places for x in raw.split(";")}))
+    arch_event = st.selectbox("Archaeology event connection", ["All linked topics"] + selected_events["event_name"].tolist())
+focus_arch = focus.split(" (")[0] if arch_place == "Follow globe focus" else arch_place
+if focus_arch in ("Eastern Mediterranean", "All regions"): focus_arch = ""
+event_ids = selected_events.loc[selected_events.event_name == arch_event, "event_id"].tolist()
+arch_filtered = filter_evidence(arch, selected["Book Name"].tolist(), focus_arch, event_ids)
 fig = go.Figure()
 if show_writing:
     plotted = selected[selected["writer_place_id"].isin(places_by_id.index)].copy()
@@ -78,29 +138,53 @@ if show_events and not selected_events.empty:
     mapped["longitude"] = mapped["place_id"].map(places_by_id["longitude"])
     mapped["details"] = mapped.apply(lambda r: f"<b>{r['event_name']}</b><br>{r['reference']}<br>{r['period_label']}<br>{r['summary']}", axis=1)
     fig.add_trace(go.Scattergeo(lat=mapped["latitude"], lon=mapped["longitude"], text=mapped["details"], hoverinfo="text", mode="markers", name="Event location", marker=dict(size=12, color="#3cbbe6", opacity=.85, symbol="diamond", line=dict(width=1, color="white"))))
-fig.update_geos(projection_type="orthographic", projection_rotation=dict(lon=center_lon, lat=center_lat), projection_scale=zoom, showland=True, landcolor="#c7d6b3", showocean=True, oceancolor="#0d3556", showlakes=True, lakecolor="#0d3556", showcountries=True, countrycolor="#627b6c", coastlinecolor="#657d74", bgcolor="#071c31")
-fig.update_layout(height=650, margin=dict(l=0,r=0,t=10,b=0), paper_bgcolor="#071c31", font_color="white", legend=dict(x=.01,y=.99,bgcolor="rgba(0,0,0,.4)"))
+if show_arch:
+    add_evidence_layer(fig, arch_filtered)
+geo = dict(projection_type="natural earth" if view == "World map" else "orthographic", projection_scale=zoom, showland=True, landcolor="#b2b59a", showocean=True, oceancolor="#143e56", showlakes=True, lakecolor="#143e56", showcountries=True, countrycolor="#738779", showcoastlines=True, coastlinecolor="#83938a", bgcolor="#0a1725", showframe=False)
+if view == "Globe":
+    geo["projection_rotation"] = dict(lon=center_lon, lat=center_lat)
+else:
+    geo["center"] = dict(lon=center_lon, lat=center_lat)
+fig.update_geos(**geo)
+fig.update_layout(height=590, margin=dict(l=0,r=0,t=10,b=10), paper_bgcolor="#0a1725", font_color="#eef2f5", legend=dict(orientation="h", x=0,y=-.02,bgcolor="rgba(0,0,0,0)"), dragmode="pan")
 fig.add_trace(go.Scattergeo(lat=[center_lat], lon=[center_lon], mode="markers", marker=dict(symbol="star",size=17,color="#f5ce72"),name="Selected focus"))
-st.plotly_chart(fig, use_container_width=True)
-st.caption("Use the focus selector to rotate the globe; drag to explore.")
-st.info("A marker for a broad region is only illustrative, not an exact historical coordinate. Rotate focus using the location dropdown; change zoom with the slider.")
-
-left, right = st.columns(2)
-with left:
-    st.subheader("📖 Book / writer details")
-    if selected.empty:
-        st.warning("No books match these filters.")
+with map_panel:
+    st.subheader("Interactive atlas")
+    markers=[]
+    for trace in fig.data:
+        for i,(la,lo) in enumerate(zip(trace.lat,trace.lon)):
+            marker=trace.marker
+            txt=trace.text[i] if trace.text is not None else trace.name
+            markers.append(dict(lat=float(la),lon=float(lo),color=marker.color if isinstance(marker.color,str) else "#e8c98d",symbol=marker.symbol or "circle",text=re.sub(r"<[^>]+>"," ",str(txt))))
+    globe(points=markers,lat=center_lat,lon=center_lon,zoom=zoom)
+    st.caption("Drag to explore • scroll to zoom • switch to flat map. Gold star = selected focus. Hover over markers for details. Coordinates are approximate.")
+    st.subheader("Historical timeline")
+    if not selected_events.empty:
+        st.dataframe(selected_events.sort_values("year_sort")[["period_label","event_name","reference"]],hide_index=True)
+with insights:
+    st.subheader("Location insights")
+    st.write(f"**{focus}**")
+    st.caption(f"{len(arch_filtered)} matching archaeological records")
+    if not arch_filtered.empty:
+        st.markdown("**Featured evidence**")
+        from archaeology import featured_evidence
+        featured_evidence(arch_filtered)
     else:
-        detail_book = st.selectbox("Inspect a book", selected["Book Name"].tolist())
-        row = selected[selected["Book Name"] == detail_book].iloc[0]
-        st.write(f"**Writer(s):** {row['Writer(s)']}")
-        st.write(f"**Writing location:** {row['Place Written'] or 'Not specified'}")
-        st.write(f"**Writing completed:** {row['Writing Completed (BCE/CE by division)']}")
-        st.write(f"**Time covered:** {row['Time Covered'] or 'Not specified'}")
-        if detail_book == "Hebrews":
-            st.caption("The supplied JW.org table attributes Hebrews to Paul; authorship is disputed in broader scholarship.")
-with right:
-    st.subheader("🎬 Event detail / video")
+        st.caption("No curated evidence matches these filters.")
+    with st.expander("Book / writer details", expanded=False):
+        if selected.empty:
+            st.warning("No books match these filters.")
+        else:
+            detail_book = st.selectbox("Inspect a book", selected["Book Name"].tolist())
+            row = selected[selected["Book Name"] == detail_book].iloc[0]
+            st.write(f"**Writer(s):** {row['Writer(s)']}")
+            st.write(f"**Writing location:** {row['Place Written'] or 'Not specified'}")
+            st.write(f"**Writing completed:** {row['Writing Completed (BCE/CE by division)']}")
+            st.write(f"**Time covered:** {row['Time Covered'] or 'Not specified'}")
+            if detail_book == "Hebrews":
+                st.caption("The supplied JW.org table attributes Hebrews to Paul; authorship is disputed in broader scholarship.")
+with insights:
+    st.subheader("Event detail / video")
     if selected_events.empty:
         st.write("No event records for the current selection. Add more rows to events.csv.")
     else:
@@ -120,9 +204,8 @@ with right:
         else:
             st.caption("No video attached.")
 
-st.subheader("Historical timeline")
-if not selected_events.empty:
-    st.dataframe(selected_events.sort_values("year_sort")[["period_label","event_name","reference"]],hide_index=True)
+research_panel(arch_filtered, arch)
+
 st.subheader("📊 Research tables")
 with st.expander("Bible books — filterable data", expanded=False):
     st.dataframe(selected.drop(columns=["writer_place_id", "testament"]), use_container_width=True, hide_index=True)

@@ -1,0 +1,1 @@
+Back up app.py, globe.py and globe.html. Copy the three replacement files into the existing project. Restart Streamlit. Existing data and texture are unchanged. Welcome atmosphere is procedural CSS, not a photographic background.
